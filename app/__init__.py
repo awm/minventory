@@ -23,7 +23,12 @@ class Base(db.Model):
                                             onupdate=db.func.current_timestamp())
 
 # Import a module / component using its blueprint handler variable (mod_auth)
-from app.modules.auth.controllers import mod_auth
+from app.modules.auth.controllers import mod_auth, login_required
+
+@app.route("/")
+@login_required
+def index():
+    return "Hello, World!"
 
 # Register blueprint(s)
 app.register_blueprint(mod_auth, url_prefix="/auth")
