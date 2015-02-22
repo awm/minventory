@@ -9,7 +9,7 @@ from manage import sampledata
 
 def version_base():
     version = platform.python_version_tuple()
-    if version[0] == 2 and version[1] <= 6:
+    if int(version[0]) == 2 and int(version[1]) <= 6:
         return Python26AssertionMixin
     else:
         return TestCase
