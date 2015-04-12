@@ -1,20 +1,31 @@
-# Import flask dependencies
-from flask import Blueprint, request, render_template, flash, session, redirect, url_for
+import pkgutil
 
-# Import Login
-from flask.ext.login import LoginManager, login_required, login_user, logout_user
+from flask import Blueprint, request
+from flask.ext.login import LoginManager, login_required
 
-# Import password / encryption helper tools
-from werkzeug import check_password_hash, generate_password_hash
-
-# Import application instance
 from app import app
-
-# Import module forms
-from app.modules.auth.forms import LoginForm
-
-# Import module models (i.e. User)
 from app.modules.auth.models import User
+
+# Read the authorization module configuration
+def _get_provider(name):
+    fullname = "app.plugins.auth.{}".format(name)
+    loader = pkgutil.get_loader(fullname)
+    module = loader.load_module(fullname)
+    return module
+
+def _configure():
+    config = []
+    if 'AUTH_PROVIDERS' in app.config:
+        for provider in app.config['AUTH_PROVIDERS']:
+            if isinstance(provider, list) or isinstance(provider, tuple):
+                group = []
+                for p in provider:
+                    group.append(_get_provider(p))
+                config.append(group)
+            else:
+                config.append([_get_provider(provider)])
+    return config
+_auth_config = _configure()
 
 # Set up the login manager
 login_manager = LoginManager()
@@ -24,30 +35,32 @@ login_manager.init_app(app)
 # Register the login callback
 @login_manager.user_loader
 def load_user(userid):
-    return User.get(userid)
+    return User.get(int(userid))
 
 # Define the blueprint: 'auth'
-mod_auth = Blueprint('auth', __name__, template_folder='templates')
+mod_auth = Blueprint('auth', __name__)
 
 # Set the route and accepted methods
-@mod_auth.route('/login', methods=['GET', 'POST'])
+@mod_auth.route('/login', methods=['POST'])
 def login():
-    # If sign in form is submitted
-    form = LoginForm(request.form)
-
-    # Verify the sign in form
-    if form.validate_on_submit():
-        user = User.query.filter_by(username=form.username.data).first()
-        if user and check_password_hash(user.password, form.password.data):
-            session['user_id'] = user.id
-            login_user(user)
-            flash("Logged in successfully.")
-            return redirect(request.args.get("next") or url_for("index"))
-        flash('Incorrect user name or password', 'error-message')
-    return render_template("auth/login.html", form=form, next_path=request.args.get("next"))
+    credentials = request.get_json()
+    authenticated = False
+    for providers in _auth_config:
+        chain_passed = False
+        for provider in providers:
+            chain_passed = provider.check(credentials) and chain_passed
+        authenticated = chain_passed or authenticated
+    if authenticated:
+        user = User.query.filter_by(username=credentials.username).first()
+        if user:
+            token = user.start_session()
+            return jsonify(token=token)
+    err = jsonify(error="Authentication failed")
+    err.status_code = 401
+    return err
 
 @mod_auth.route("/logout")
 @login_required
 def logout():
-    logout_user()
-    return redirect(url_for('auth.login'))
+    current_user.end_session()
+    return ("", 204)
