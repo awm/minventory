@@ -38,7 +38,7 @@ class User(Base, UserMixin):
         self.active   = active
 
     def __repr__(self):
-        return "User<username={}>".format(self.username)
+        return "User<username={0}>".format(self.username)
 
     @staticmethod
     def get(user_id):
@@ -92,7 +92,7 @@ class Session(Base):
         return standard_b64encode(data)
 
     def __repr__(self):
-        return "Session<user={}, expires={}>".format(self.user, self.expires)
+        return "Session<user={0}, expires={1}>".format(self.user, self.expires)
 
     def validate(self):
         if datetime.utcnow() < self.expires:

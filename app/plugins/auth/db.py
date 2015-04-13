@@ -8,7 +8,5 @@ _default_comparison = generate_password_hash("", method=app.config['PW_HASH_SETT
 def check(credentials):
     user = User.query.filter_by(username=credentials['username']).first()
     pwhash = _default_comparison if user is None else user.password
-    print(user, pwhash)
     result = check_password_hash(pwhash, credentials['password'])
-    print("result = {}".format(result))
     return result

@@ -8,7 +8,7 @@ from app.modules.auth.models import User
 
 # Read the authorization module configuration
 def _get_provider(name):
-    fullname = "app.plugins.auth.{}".format(name)
+    fullname = "app.plugins.auth.{0}".format(name)
     loader = pkgutil.get_loader(fullname)
     module = loader.load_module(fullname)
     return module
