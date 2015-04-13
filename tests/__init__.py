@@ -1,8 +1,8 @@
 import platform
 
+from flask import json
 from flask.testing import FlaskClient
 from flask.ext.testing import TestCase
-# from flask.ext.fillin import FormWrapper
 
 from app import app, db
 from manage import sampledata
@@ -27,10 +27,22 @@ class Python26AssertionMixin(TestCase):
     def assertNotIn(self, a, b, msg=None):
         self.assertFalse(a in b, msg)
 
-# class FormFlaskClient(FlaskClient):
-#     def __init__(self, *args, **kwargs):
-#         kwargs['response_wrapper'] = FormWrapper
-#         super(FormFlaskClient, self).__init__(*args, **kwargs)
+# This wrapper assumes that the data is specified in the kwargs and that the content type is not provided
+class JsonFlaskClient(FlaskClient):
+    def _do_thing(self, func, args, kwargs):
+        if 'data' in kwargs:
+            kwargs['data'] = json.dumps(kwargs['data'])
+            kwargs['content_type'] = "application/json"
+        return func(*args, **kwargs)
+
+    def get_json(self, *args, **kwargs):
+        return self._do_thing(self.get, args, kwargs)
+    def patch_json(self, *args, **kwargs):
+        return self._do_thing(self.patch, args, kwargs)
+    def post_json(self, *args, **kwargs):
+        return self._do_thing(self.post, args, kwargs)
+    def put_json(self, *args, **kwargs):
+        return self._do_thing(self.put, args, kwargs)
 
 class TestBase(version_base()):
     config = {
@@ -42,7 +54,7 @@ class TestBase(version_base()):
 
     def create_app(self):
         app.config.update(self.config)
-        # app.test_client_class = FormFlaskClient
+        app.test_client_class = JsonFlaskClient
         return app
     
     def setUp(self):

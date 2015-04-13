@@ -1,6 +1,6 @@
 import pkgutil
 
-from flask import Blueprint, request
+from flask import Blueprint, request, abort, jsonify
 from flask.ext.login import LoginManager, login_required
 
 from app import app
@@ -44,14 +44,17 @@ mod_auth = Blueprint('auth', __name__)
 @mod_auth.route('/login', methods=['POST'])
 def login():
     credentials = request.get_json()
+    if not credentials or 'username' not in credentials or 'password' not in credentials:
+        abort(400)
+
     authenticated = False
     for providers in _auth_config:
-        chain_passed = False
+        chain_passed = True
         for provider in providers:
             chain_passed = provider.check(credentials) and chain_passed
         authenticated = chain_passed or authenticated
     if authenticated:
-        user = User.query.filter_by(username=credentials.username).first()
+        user = User.query.filter_by(username=credentials['username']).first()
         if user:
             token = user.start_session()
             return jsonify(token=token)

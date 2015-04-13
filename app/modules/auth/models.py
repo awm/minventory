@@ -1,5 +1,4 @@
 import os
-import pkgutil
 import datetime
 from base64 import standard_b64encode
 
@@ -29,12 +28,14 @@ class User(Base, UserMixin):
     username = db.Column(db.String(128),  nullable=False, unique=True)
     email    = db.Column(db.String(128),  nullable=False)
     password = db.Column(db.String(192),  nullable=False)
+    active   = db.Column(db.Boolean(),    nullable=False, default=True)
 
-    def __init__(self, name, username, email, password):
+    def __init__(self, name, username, email, password, active=True):
         self.name     = name
         self.username = username
         self.email    = email
         self.password = generate_password_hash(password, method=app.config['PW_HASH_SETTINGS'], salt_length=app.config['PW_SALT_LENGTH'])
+        self.active   = active
 
     def __repr__(self):
         return "User<username={}>".format(self.username)
@@ -88,7 +89,7 @@ class Session(Base):
     @staticmethod
     def generate_token():
         data = os.urandom(32)
-        return base64.standard_b64encode(data)
+        return standard_b64encode(data)
 
     def __repr__(self):
         return "Session<user={}, expires={}>".format(self.user, self.expires)
