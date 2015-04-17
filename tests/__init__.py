@@ -32,7 +32,7 @@ class JsonFlaskClient(FlaskClient):
     def _do_thing(self, func, args, kwargs):
         if 'data' in kwargs:
             kwargs['data'] = json.dumps(kwargs['data'])
-            kwargs['content_type'] = "application/json"
+        kwargs['content_type'] = "application/json"
         return func(*args, **kwargs)
 
     def get_json(self, *args, **kwargs):
@@ -64,3 +64,6 @@ class TestBase(version_base()):
     def tearDown(self):
         self.db.session.remove()
         self.db.drop_all()
+
+    def assert204(self, response, message=None):
+        self.assertStatus(response, 204, message)

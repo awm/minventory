@@ -1,7 +1,7 @@
 import pkgutil
 
 from flask import Blueprint, request, abort, jsonify
-from flask.ext.login import LoginManager, login_required
+from flask.ext.login import LoginManager, login_required, current_user
 
 from app import app
 from app.modules.auth.models import User
@@ -29,7 +29,6 @@ _auth_config = _configure()
 
 # Set up the login manager
 login_manager = LoginManager()
-login_manager.login_view = "auth.login"
 login_manager.init_app(app)
 
 # Register the login callback
@@ -62,7 +61,7 @@ def login():
     err.status_code = 401
     return err
 
-@mod_auth.route("/logout")
+@mod_auth.route("/logout", methods=['POST'])
 @login_required
 def logout():
     current_user.end_session()
