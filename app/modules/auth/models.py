@@ -47,7 +47,7 @@ class User(Base, UserMixin):
     def is_authenticated(self):
         token = _get_session_token()
         if token is not None:
-            sessions = filter(lambda s: s.token == token, self.sessions)
+            sessions = [s for s in self.sessions if s.token == token]
             saved_session = sessions[0] if sessions else None
             return False if saved_session is None else saved_session.validate()
         return False
@@ -66,7 +66,7 @@ class User(Base, UserMixin):
     def end_session(self):
         token = _get_session_token()
         if token:
-            sessions = filter(lambda s: s.token == token, self.sessions)
+            sessions = [s for s in self.sessions if s.token == token]
             saved_session = sessions[0] if sessions else None
             if saved_session is not None:
                 saved_session.invalidate()
